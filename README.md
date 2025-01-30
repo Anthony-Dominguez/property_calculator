@@ -12,7 +12,7 @@ It allows users to **calculate different financial aspects** of property investm
 - ## 🔧 Installation & Setup
 - ### **1️⃣ Clone the Repository**
 ```sh
-git clone https://github.com/YOUR_USERNAME/PropertyCalculator.git
+git clone https://github.com/Anthony-Dominguez/PropertyCalculator.git
 cd PropertyCalculator
 
 ```
