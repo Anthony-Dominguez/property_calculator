@@ -31,7 +31,6 @@ def home():
 
 
 
-
 # Login
 @app.route('/login', methods=['POST', 'GET'])
 def login():
@@ -81,9 +80,6 @@ def dashboard():
     if 'username' not in session:
         return redirect(url_for('login'))  # Redirect if user is not logged in
     return render_template('dashboard.html') 
-#Logout
-
-
 
 
 # Delete User
@@ -103,6 +99,12 @@ def delete_user():
     return redirect(url_for('dashboard'))  # If user not found, go back to dashboard
 
 
+# Route to display the interactive map
+@app.route('/map')
+def show_map():
+    if 'username' not in session:
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+    return render_template('map.html')  # Renders the saved map file
 
 @app.route('/calculate', methods=['POST'])
 def calculate():
@@ -140,6 +142,7 @@ def calculate():
         result["Annual Growth Total"] = rent_growth + appreciation + other_cost
 
     return render_template('result.html', result=result)
+
 
 
 if __name__  in "__main__":
