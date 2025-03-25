@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}My Application{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- External CSS -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <div class="navbar">
+      {% if logged_in %}
+      <div class="navbar-left">
+        <!-- Place toggle button here -->
+        <button id="theme-toggle">Toggle Theme</button>
+        <!-- (Optional) Add logo or extra links here -->
+      </div>
+      <div class="navbar-center">
+        <a href="{{ url_for('show_map') }}">
+          <button>🗺 View Map</button>
+        </a>
+      </div>
+      <div class="navbar-right">
+        <a href="{{ url_for('logout') }}">
+          <button class="logout-btn">🚪 Logout</button>
+        </a>
+      </div>
+      {% else %}
+      <div class="navbar-left">
+        <!-- Toggle button here as well if desired -->
+        <button id="theme-toggle">Toggle Theme</button>
+      </div>
+      <div class="navbar-center">
+        <!-- Minimal header content for non-logged in users -->
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="container">{% block content %}{% endblock %}</div>
+
+    <script>
+      // Check for saved theme in localStorage
+      const currentTheme = localStorage.getItem("theme");
+      if (currentTheme === "dark") {
+        document.body.classList.add("dark-mode");
+      }
+      // Toggle theme on button click
+      document
+        .getElementById("theme-toggle")
+        .addEventListener("click", function () {
+          document.body.classList.toggle("dark-mode");
+          if (document.body.classList.contains("dark-mode")) {
+            localStorage.setItem("theme", "dark");
+          } else {
+            localStorage.setItem("theme", "light");
+          }
+        });
+    </script>
+  </body>
+</html>

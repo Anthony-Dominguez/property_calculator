@@ -1,0 +1,37 @@
+{% extends 'base.html' %} {% block title %}Credit Check Result{% endblock %} {%
+block content %}
+<h2>Credit Check Results</h2>
+<div>
+  <p><strong>Credit Score:</strong> {{ result.credit_score }}</p>
+  <p>
+    <strong>Loan Approved:</strong> {{ 'Yes' if result.loan_approved else 'No'
+    }}
+  </p>
+  <p><strong>Interest Rate:</strong> {{ result.interest_rate }}%</p>
+  <p><strong>Debt-to-Income Ratio:</strong> {{ result.dti }}%</p>
+  <p>
+    <strong>Requested Loan Amount:</strong> ${{
+    "{:,.2f}".format(result.requested_loan) }}
+  </p>
+  <p>
+    <strong>Maximum Affordable Loan:</strong> ${{
+    "{:,.2f}".format(result.max_affordable_loan) }}
+  </p>
+  {% if result.loan_approved %}
+  <p>
+    <strong>Monthly Payment (30-year term):</strong> ${{
+    "{:,.2f}".format(result.monthly_payment) }}
+  </p>
+  {% else %}
+  <p><strong>Monthly Payment:</strong> Not applicable (loan not approved)</p>
+  {% endif %}
+
+  <h3>Credit Improvement Tips:</h3>
+  <ul>
+    {% for tip in result.tips %}
+    <li>{{ tip }}</li>
+    {% endfor %}
+  </ul>
+</div>
+<a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+{% endblock %}

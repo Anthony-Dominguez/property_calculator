@@ -1,70 +1,56 @@
-from flask import Flask , render_template, redirect , request , url_for, session
+from flask import Flask, render_template, redirect, request, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
-
-app = Flask("__name__")
-app.secret_key = 'your_secret_key_here' 
+app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'
 
 # Configure the database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False # no tracking
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-
 
 # Database Model
 class User(db.Model):
-    # Variables 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(25), unique=True, nullable=False) # nullable = not cannot be empty
+    username = db.Column(db.String(25), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
 
-
-
 # Routes
-# Login
 @app.route('/')
 def home():
     if 'username' in session:
         return redirect(url_for('dashboard'))
-    return render_template(('login.html'))
+    return render_template('login.html')
 
-
-
-# Login
 @app.route('/login', methods=['POST', 'GET'])
 def login():
     if request.method == "POST":
         username = request.form['username']
         password = request.form['password']
-
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password, password):
-            session['username'] = username # unique session for user
+            session['username'] = username
             return redirect(url_for('dashboard'))
         
-        # If login fails
-        return render_template('login.html', error='Invalid credentials')
-    return render_template('login.html')
-#Register
-@app.route("/register", methods= ['POST','GET'])
+        return render_template('login.html', error='Invalid credentials', logged_in=False)
+    return render_template('login.html', logged_in=False)
+
+@app.route("/register", methods=['POST', 'GET'])
 def register():
     if request.method == "POST":
         username = request.form['username']
         password = request.form['password']
         confirm_password = request.form['confirm-password']
 
-        # Check if passwords match
         if password != confirm_password:
             return render_template('register.html', error='Passwords do not match')
 
-        # Check if username already exists
         if User.query.filter_by(username=username).first():
             return render_template('register.html', error='Username already exists')
 
-        # Create new user
-        hashed_password = generate_password_hash(password)
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=8)
         new_user = User(username=username, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
@@ -73,38 +59,31 @@ def register():
 
     return render_template('register.html')
 
-
-#Dashboard
 @app.route('/dashboard')
 def dashboard():
     if 'username' not in session:
-        return redirect(url_for('login'))  # Redirect if user is not logged in
-    return render_template('dashboard.html') 
+        return redirect(url_for('login'))
+    return render_template('dashboard.html', logged_in=True)
 
-
-# Delete User
 @app.route('/delete_user', methods=['POST'])
 def delete_user():
     if 'username' not in session:
-        return redirect(url_for('login'))  # Ensure only logged-in users can delete accounts
-    
-    user = User.query.filter_by(username=session['username']).first()
+        return redirect(url_for('login'))
 
+    user = User.query.filter_by(username=session['username']).first()
     if user:
         db.session.delete(user)
         db.session.commit()
-        session.pop('username', None)  # Remove user session after deletion
-        return redirect(url_for('register'))  # Redirect to register page after deletion
+        session.pop('username', None)
+        return redirect(url_for('register'))
 
-    return redirect(url_for('dashboard'))  # If user not found, go back to dashboard
+    return redirect(url_for('dashboard'))
 
-
-# Route to display the interactive map
 @app.route('/map')
 def show_map():
     if 'username' not in session:
-        return redirect(url_for('login'))  # Redirect to login if not logged in
-    return render_template('map.html')  # Renders the saved map file
+        return redirect(url_for('login'))
+    return render_template('map.html')
 
 @app.route('/calculate', methods=['POST'])
 def calculate():
@@ -112,40 +91,123 @@ def calculate():
     result = {}
 
     if category == "acquisition_cost":
-        purchase_price = float(request.form.get("purchase_price", 0))
-        closing_costs = float(request.form.get("closing_costs", 0))
-        renovation_budget = float(request.form.get("renovation_budget", 0))
-        downpayment = float(request.form.get("downpayment", 0))
+        purchase_price = float(request.form.get("purchase_price") or 0)
+        closing_costs = float(request.form.get("closing_costs") or 0)
+        renovation_budget = float(request.form.get("renovation_budget") or 0)
+        downpayment = float(request.form.get("downpayment") or 0)
 
         total_fixed_costs = purchase_price + closing_costs + renovation_budget + downpayment
         result["Total Fixed Costs"] = total_fixed_costs
-
     elif category == "operating_expenses":
-        homeowners_insurance = float(request.form.get("homeowners_insurance", 0))
-        property_tax = float(request.form.get("property_tax", 0))
-        other_costs = float(request.form.get("other_cost", 0))
+        homeowners_insurance = float(request.form.get("homeowners_insurance") or 0)
+        property_tax = float(request.form.get("property_tax") or 0)
+        other_costs = float(request.form.get("other_cost") or 0)
 
         total_operating_expenses = homeowners_insurance + property_tax + other_costs
         result["Total Operating Expenses"] = total_operating_expenses
-
     elif category == "cash_flow":
-        rent_revenue = float(request.form.get("rent_revenue", 0))
-        coc_return_goal = float(request.form.get("coc_return_goal", 0))
-
+        rent_revenue = float(request.form.get("rent_revenue") or 0)
+        coc_return_goal = float(request.form.get("coc_return_goal") or 0)
         result["Annual Cash Flow"] = rent_revenue * (coc_return_goal / 100)
-
     elif category == "annual_growth":
-        rent_growth = float(request.form.get("rent_growth", 0))
-        appreciation = float(request.form.get("appreciation", 0))
-        other_cost = float(request.form.get("other_cost", 0))
+        rent_growth = float(request.form.get("rent_growth") or 0)
+        appreciation = float(request.form.get("appreciation") or 0)
+        other_cost = float(request.form.get("other_cost") or 0)
 
         result["Annual Growth Total"] = rent_growth + appreciation + other_cost
 
     return render_template('result.html', result=result)
 
+@app.route('/check_credit', methods=['POST'])
+def check_credit():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        # Get and validate form data
+        credit_score = int(request.form.get('credit_score'))
+        salary = float(request.form.get('salary'))
+        monthly_debt = float(request.form.get('monthly_debt'))
+        loan_amount = float(request.form.get('loan_amount'))
 
+        # Input validation
+        if not (300 <= credit_score <= 850):
+            return render_template('dashboard.html', error="Credit score must be between 300 and 850")
+        if salary < 0 or monthly_debt < 0 or loan_amount < 0:
+            return render_template('dashboard.html', error="Values cannot be negative")
 
-if __name__  in "__main__":
+        # Calculate Debt-to-Income Ratio (DTI)
+        monthly_income = salary / 12
+        dti = (monthly_debt / monthly_income) * 100 if monthly_income > 0 else 100
+
+        # Determine loan eligibility and interest rate
+        loan_approved = False
+        interest_rate = 0.0
+        credit_tips = []
+
+        if credit_score >= 740:
+            loan_approved = True
+            interest_rate = 3.5 if dti < 36 else 4.0
+            credit_tips = [
+                "Maintain your excellent credit by paying bills on time.",
+                "Keep credit utilization below 30%."
+            ]
+        elif credit_score >= 670:
+            loan_approved = True
+            interest_rate = 4.5 if dti < 36 else 5.0
+            credit_tips = [
+                "Continue making timely payments.",
+                "Reduce outstanding debt to improve your score."
+            ]
+        elif credit_score >= 580:
+            loan_approved = dti < 43
+            interest_rate = 6.5 if dti < 36 else 7.5
+            credit_tips = [
+                "Pay down existing debt to lower your DTI.",
+                "Make all payments on time to build credit history.",
+                "Consider a secured credit card to improve your score."
+            ]
+        else:
+            loan_approved = False
+            interest_rate = 10.0
+            credit_tips = [
+                "Work on paying bills on time consistently.",
+                "Reduce debt through a payment plan.",
+                "Consider credit counseling services."
+            ]
+
+        # Calculate maximum affordable loan
+        max_loan = (monthly_income * 0.36 - monthly_debt) * 360
+
+        # Calculate monthly payment (assuming 30-year term)
+        term_months = 360  # 30 years
+        monthly_rate = interest_rate / 100 / 12
+        if monthly_rate > 0:
+            monthly_payment = loan_amount * (monthly_rate * (1 + monthly_rate)**term_months) / ((1 + monthly_rate)**term_months - 1)
+        else:
+            monthly_payment = loan_amount / term_months if loan_amount > 0 else 0
+
+        result = {
+            'credit_score': credit_score,
+            'loan_approved': loan_approved,
+            'interest_rate': interest_rate,
+            'dti': round(dti, 2),
+            'requested_loan': loan_amount,
+            'max_affordable_loan': round(max_loan, 2),
+            'monthly_payment': round(monthly_payment, 2) if loan_approved else 0,
+            'tips': credit_tips
+        }
+
+        return render_template('credit_result.html', result=result)
+    except (ValueError, TypeError):
+        return render_template('dashboard.html', error="Please enter valid numerical values")
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=True, port=8080)

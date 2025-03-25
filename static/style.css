@@ -1,52 +1,167 @@
-/* Global Styles */
-body {
-  font-family: Arial, sans-serif;
+/* Define default (light theme) variables */
+:root {
+  --background-color: #ffffff;
+  --text-color: #000000;
+  --link-color: #0077cc;
+  --navbar-background: #f8f8f8;
+  --navbar-text: #333333;
+  --container-background: #ffffff;
+  --container-shadow: rgba(0, 0, 0, 0.1);
+  --input-background: #ffffff;
+  --input-border: #ccc;
+  --input-text: #000000;
+  --button-background: #0077cc;
+  --button-text: #ffffff;
+  --button-hover: #005fa3;
+}
+
+/* Dark theme variables activated with the .dark-mode class on body */
+body.dark-mode {
+  --background-color: #121212;
+  --text-color: #e0e0e0;
+  --link-color: #64ffda;
+  --navbar-background: #1f1f1f;
+  --navbar-text: #e0e0e0;
+  --container-background: #1e1e1e;
+  --container-shadow: rgba(0, 0, 0, 0.7);
+  --input-background: #2a2a2a;
+  --input-border: #333333;
+  --input-text: #e0e0e0;
+  --button-background: #64ffda;
+  --button-text: #121212;
+  --button-hover: #52d0b0;
+}
+
+/* Apply the variables */
+html, body {
+  height: 100%;
   margin: 0;
-  padding: 20px;
-  background-color: #f0f0f0;
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
-/* Centered Container */
-.container {
-  max-width: 500px;
-  margin: 0 auto;
-  background-color: white;
-  padding: 30px;
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+/* Top Navigation Bar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--navbar-background);
+  padding: 10px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+.navbar .navbar-center {
+  flex: 1;
+  text-align: center;
+}
+.navbar button {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: var(--button-background);
+  color: var(--button-text);
+  border: none;
   border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.navbar button:hover {
+  background-color: var(--button-hover);
+}
+.logout-btn {
+  background-color: #ff5555;
+  color: #ffffff;
+}
+.logout-btn:hover {
+  background-color: #ff4444;
 }
 
-/* Form Groups */
+/* Main Container */
+.container {
+  margin: 80px auto 20px;
+  padding: 20px;
+  max-width: 600px;
+  background: var(--container-background);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--container-shadow);
+}
+
+/* Headings */
+h2 {
+  text-align: center;
+  color: var(--text-color);
+}
+
+/* Form Styling */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
-
-input {
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-color);
+}
+.form-group input,
+.form-group select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--input-border);
   border-radius: 4px;
-  box-sizing: border-box;
+  background: var(--input-background);
+  color: var(--input-text);
 }
-
-/* Button Styles */
-button {
+.form-group button {
   width: 100%;
   padding: 12px;
-  background-color: #4caf50;
-  color: white;
+  background-color: var(--button-background);
+  color: var(--button-text);
   border: none;
   border-radius: 4px;
+  font-size: 16px;
   cursor: pointer;
+  transition: background 0.3s;
 }
-
-button:hover {
-  background-color: #45a049;
+.form-group button:hover {
+  background-color: var(--button-hover);
 }
 
 /* Error Message */
 .error {
-  color: red;
+  color: #ff5555;
+  text-align: center;
   margin-top: 10px;
-  font-size: 80%;
+}
+
+/* Utility: Checkbox Labels */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.checkbox-label input {
+  margin-right: 8px;
+}
+.btn {
+  background-color: var(--button-background);
+  color: var(--button-text);
+  border: none;
+  border-radius: 4px;
+  padding: 12px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+.btn:hover {
+  background-color: var(--button-hover);
+  transform: translateY(-2px);
 }
