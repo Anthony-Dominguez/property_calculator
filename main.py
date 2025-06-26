@@ -1,13 +1,25 @@
+import os
+import logging
 from flask import Flask, render_template, redirect, request, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
 
-# Configure the database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Configuration
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'fallback-secret-key-change-in-production')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///users.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s'
+)
 db = SQLAlchemy(app)
 
 # Database Model
@@ -87,36 +99,60 @@ def show_map():
 
 @app.route('/calculate', methods=['POST'])
 def calculate():
-    category = request.form.get("category")
-    result = {}
+    try:
+        category = request.form.get("category")
+        result = {}
 
-    if category == "acquisition_cost":
-        purchase_price = float(request.form.get("purchase_price") or 0)
-        closing_costs = float(request.form.get("closing_costs") or 0)
-        renovation_budget = float(request.form.get("renovation_budget") or 0)
-        downpayment = float(request.form.get("downpayment") or 0)
+        if category == "acquisition_cost":
+            purchase_price = float(request.form.get("purchase_price") or 0)
+            closing_costs = float(request.form.get("closing_costs") or 0)
+            renovation_budget = float(request.form.get("renovation_budget") or 0)
+            downpayment = float(request.form.get("downpayment") or 0)
 
-        total_fixed_costs = purchase_price + closing_costs + renovation_budget + downpayment
-        result["Total Fixed Costs"] = total_fixed_costs
-    elif category == "operating_expenses":
-        homeowners_insurance = float(request.form.get("homeowners_insurance") or 0)
-        property_tax = float(request.form.get("property_tax") or 0)
-        other_costs = float(request.form.get("other_cost") or 0)
+            # Validation
+            if any(val < 0 for val in [purchase_price, closing_costs, renovation_budget, downpayment]):
+                return render_template('dashboard.html', error="Values cannot be negative")
 
-        total_operating_expenses = homeowners_insurance + property_tax + other_costs
-        result["Total Operating Expenses"] = total_operating_expenses
-    elif category == "cash_flow":
-        rent_revenue = float(request.form.get("rent_revenue") or 0)
-        coc_return_goal = float(request.form.get("coc_return_goal") or 0)
-        result["Annual Cash Flow"] = rent_revenue * (coc_return_goal / 100)
-    elif category == "annual_growth":
-        rent_growth = float(request.form.get("rent_growth") or 0)
-        appreciation = float(request.form.get("appreciation") or 0)
-        other_cost = float(request.form.get("other_cost") or 0)
+            total_fixed_costs = purchase_price + closing_costs + renovation_budget + downpayment
+            result["Total Fixed Costs"] = total_fixed_costs
+            
+        elif category == "operating_expenses":
+            homeowners_insurance = float(request.form.get("homeowners_insurance") or 0)
+            property_tax = float(request.form.get("property_tax") or 0)
+            other_costs = float(request.form.get("other_cost") or 0)
 
-        result["Annual Growth Total"] = rent_growth + appreciation + other_cost
+            # Validation
+            if any(val < 0 for val in [homeowners_insurance, property_tax, other_costs]):
+                return render_template('dashboard.html', error="Values cannot be negative")
 
-    return render_template('result.html', result=result)
+            total_operating_expenses = homeowners_insurance + property_tax + other_costs
+            result["Total Operating Expenses"] = total_operating_expenses
+            
+        elif category == "cash_flow":
+            rent_revenue = float(request.form.get("rent_revenue") or 0)
+            coc_return_goal = float(request.form.get("coc_return_goal") or 0)
+            
+            # Validation
+            if rent_revenue < 0 or coc_return_goal < 0:
+                return render_template('dashboard.html', error="Values cannot be negative")
+                
+            result["Annual Cash Flow"] = rent_revenue * (coc_return_goal / 100)
+            
+        elif category == "annual_growth":
+            rent_growth = float(request.form.get("rent_growth") or 0)
+            appreciation = float(request.form.get("appreciation") or 0)
+            other_cost = float(request.form.get("other_cost") or 0)
+
+            result["Annual Growth Total"] = rent_growth + appreciation + other_cost
+        else:
+            return render_template('dashboard.html', error="Invalid calculation category")
+
+        logging.info(f"Calculation performed for category: {category}")
+        return render_template('result.html', result=result)
+        
+    except (ValueError, TypeError) as e:
+        logging.error(f"Calculation error: {str(e)}")
+        return render_template('dashboard.html', error="Please enter valid numerical values")
 
 @app.route('/check_credit', methods=['POST'])
 def check_credit():
@@ -210,4 +246,8 @@ def logout():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=8080)
+    
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    port = int(os.getenv('PORT', 8080))
+    
+    app.run(debug=debug_mode, port=port, host='127.0.0.1')
